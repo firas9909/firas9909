@@ -1,8 +1,47 @@
-version: '2'
+version: '3.4'
+
+volumes:
+  pgdata:
+
+networks:
+  frontend:
+  backend:
+
 services:
-    cli:
-        build:
-            context: ./
-            dockerfile: ./cli.docker
-        volumes:
-            - ./:/code
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: <SomeStrongPassword>
+      POSTGRES_DB: scrubber
+      POSTGRES_USER: postgres  
+    volumes:
+      - pgdata:/var/lib/postgresql/data      
+    networks:
+      backend:
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    networks:
+      backend:
+
+  scrubber:
+    image: ${DOCKER_REGISTRY-}scrubber
+    environment:
+      - ASPNETCORE_ENVIRONMENT=PRODUCTION  
+    build:
+      context: . 
+      dockerfile: Dockerfile
+    networks:
+      frontend:
+      backend:
+    depends_on:
+      - db
+    ports:
+      - 80:80
+      - 443:443
